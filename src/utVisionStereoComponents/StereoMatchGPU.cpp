@@ -52,11 +52,11 @@
 #include <utVision/Image.h>
 
 
+#include "opencv2/opencv.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/highgui/highgui.hpp"
-#include "opencv2/contrib/contrib.hpp"
-#include "opencv2/gpu/gpu.hpp"
+#include "opencv2/stereo.hpp"
 
 #include <stdio.h>
 
@@ -127,13 +127,14 @@ protected:
 
 	// need better names .. just for testing now ..
     Mat map11, map12, map21, map22;
-    gpu::GpuMat d_left, d_right;
-    gpu::GpuMat d_disp;
+    cuda::GpuMat d_left, d_right;
+    cuda::GpuMat d_disp;
 
-    gpu::StereoBM_GPU bm;
-    gpu::StereoBeliefPropagation bp;
-    gpu::StereoConstantSpaceBP csbp;
+    cuda::StereoBM bm;
+    cuda::StereoBeliefPropagation bp;
+    cuda::StereoConstantSpaceBP csbp;
 
+ 
     int m_ndisparity;
     enum {BM, BP, CSBP} m_method;
 
@@ -164,7 +165,7 @@ public:
         , m_initialized( false )
         , m_ndisparity( 64 )
         , m_method( BP )
-	, m_bmFilter( gpu::StereoBM_GPU::BASIC_PRESET )
+	, m_bmFilter( stereo::PREFILTER_NORMALIZED_RESPONSE )
 	, m_windowSize( 19 )
 	, m_iterations( 5 )
  	, m_levels( 5 )
@@ -175,22 +176,22 @@ public:
 
         if( subgraph->m_DataflowAttributes.hasAttribute( "algorithm" ) ) {
             std::string algorithm = subgraph->m_DataflowAttributes.getAttributeString( "algorithm" );
-            if (algorithm == "bm") {
-		m_method = BM;
-		if ( subgraph->m_DataflowAttributes.hasAttribute( "windowSize" ) ) {
-			subgraph->m_DataflowAttributes.getAttributeData( "windowSize", m_windowSize );
-		}
-                if ( subgraph->m_DataflowAttributes.hasAttribute( "bmFilter" ) ) {
-			if ( subgraph->m_DataflowAttributes.getAttributeString( "bmFilter" ) == "xsobel" ) {
-				m_bmFilter = gpu::StereoBM_GPU::PREFILTER_XSOBEL;
-			}
-		}
+        if (algorithm == "bm") {
+    		m_method = BM;
+    		if ( subgraph->m_DataflowAttributes.hasAttribute( "windowSize" ) ) {
+    			subgraph->m_DataflowAttributes.getAttributeData( "windowSize", m_windowSize );
+    		}
+            if ( subgraph->m_DataflowAttributes.hasAttribute( "bmFilter" ) ) {
+    			if ( subgraph->m_DataflowAttributes.getAttributeString( "bmFilter" ) == "xsobel" ) {
+    				m_bmFilter = stereo:: PREFILTER_XSOBEL;
+    			}
+    		}
 
-	    } else if (algorithm == "bp") {
-		m_method = BP;
-		if ( subgraph->m_DataflowAttributes.hasAttribute( "iterations" ) ) {
-			subgraph->m_DataflowAttributes.getAttributeData( "iterations", m_iterations );
-		}
+        } else if (algorithm == "bp") {
+        m_method = BP;
+                if ( subgraph->m_DataflowAttributes.hasAttribute( "iterations" ) ) {
+                        subgraph->m_DataflowAttributes.getAttributeData( "iterations", m_iterations );
+                }
                 if ( subgraph->m_DataflowAttributes.hasAttribute( "levels" ) ) {
                         subgraph->m_DataflowAttributes.getAttributeData( "levels", m_levels );
                 }
@@ -349,7 +350,7 @@ public:
             csbp.iters = m_iterations;
             csbp.levels = m_levels;
 
-            gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
+            cuda::printShortCudaDeviceInfo(cv::cuda::getDevice());
 
             m_initialized = true;
         }
