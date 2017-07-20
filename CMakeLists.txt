@@ -1,0 +1,2 @@
+add_subdirectory(src/utVisionStereoComponents)
+ut_install_utql_patterns()
