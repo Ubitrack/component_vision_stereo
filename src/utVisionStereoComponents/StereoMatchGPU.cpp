@@ -126,13 +126,13 @@ protected:
     bool m_initialized;
 
 	// need better names .. just for testing now ..
-    Mat map11, map12, map21, map22;
-    cuda::GpuMat d_left, d_right;
-    cuda::GpuMat d_disp;
+    // Mat map11, map12, map21, map22;
+    // cuda::GpuMat d_left, d_right;
+    // cuda::GpuMat d_disp;
 
-    cuda::StereoBM bm;
-    cuda::StereoBeliefPropagation bp;
-    cuda::StereoConstantSpaceBP csbp;
+    // cuda::StereoBM bm;
+    // cuda::StereoBeliefPropagation bp;
+    // cuda::StereoConstantSpaceBP csbp;
 
  
     int m_ndisparity;
@@ -165,7 +165,7 @@ public:
         , m_initialized( false )
         , m_ndisparity( 64 )
         , m_method( BP )
-	, m_bmFilter( stereo::PREFILTER_NORMALIZED_RESPONSE )
+	, m_bmFilter( StereoBM::PREFILTER_NORMALIZED_RESPONSE )
 	, m_windowSize( 19 )
 	, m_iterations( 5 )
  	, m_levels( 5 )
@@ -183,7 +183,7 @@ public:
     		}
             if ( subgraph->m_DataflowAttributes.hasAttribute( "bmFilter" ) ) {
     			if ( subgraph->m_DataflowAttributes.getAttributeString( "bmFilter" ) == "xsobel" ) {
-    				m_bmFilter = stereo:: PREFILTER_XSOBEL;
+    				m_bmFilter = StereoBM::PREFILTER_XSOBEL;
     			}
     		}
 
@@ -217,13 +217,13 @@ public:
         boost::shared_ptr< Vision::Image > vimgLeft = ( m_inPortImageLeft.get()->Clone() );
         boost::shared_ptr< Vision::Image > vimgRight = ( m_inPortImageRight.get()->Clone() );
 
-		cv::Mat imgLeft( *vimgLeft, false );
-        cv::Mat imgRight( *vimgRight, false );
+		cv::Mat imgLeft( vimgLeft->Mat(), false );
+        cv::Mat imgRight( vimgRight->Mat(), false );
 
         if (!m_initialized) {
 
             Mat M1, D1, M2, D2, R, T;
-            Size img_size(vimgLeft->width, vimgLeft->height);
+            Size img_size(vimgLeft->width(), vimgLeft->height());
 
             // left intrinsics and distortion
             try
@@ -327,8 +327,8 @@ public:
 				UBITRACK_THROW("Error computing rectification transforms");
 			}
 
-			initUndistortRectifyMap(M1, D1, R1, P1, img_size, CV_16SC2, map11, map12);
-			initUndistortRectifyMap(M2, D2, R2, P2, img_size, CV_16SC2, map21, map22);
+			// initUndistortRectifyMap(M1, D1, R1, P1, img_size, CV_16SC2, map11, map12);
+			// initUndistortRectifyMap(M2, D2, R2, P2, img_size, CV_16SC2, map21, map22);
 			
 			// send QMatrix once
             Math::Matrix< double, 4, 4 > out_Q;
@@ -338,41 +338,41 @@ public:
             m_outPortQMatrix.send( Measurement::Matrix4x4( ts, out_Q ) );
 
             // setup stereo match algorithms
-            bm.ndisp = m_ndisparity;
-            bm.winSize = m_windowSize;
-            bm.preset = m_bmFilter;
+            // bm.ndisp = m_ndisparity;
+            // bm.winSize = m_windowSize;
+            // bm.preset = m_bmFilter;
 
-            bp.ndisp = m_ndisparity;
-            bp.iters = m_iterations;
-            bp.levels = m_levels;
+            // bp.ndisp = m_ndisparity;
+            // bp.iters = m_iterations;
+            // bp.levels = m_levels;
 
-            csbp.ndisp = m_ndisparity;
-            csbp.iters = m_iterations;
-            csbp.levels = m_levels;
+            // csbp.ndisp = m_ndisparity;
+            // csbp.iters = m_iterations;
+            // csbp.levels = m_levels;
 
-            cuda::printShortCudaDeviceInfo(cv::cuda::getDevice());
+            // cuda::printShortCudaDeviceInfo(cv::cuda::getDevice());
 
             m_initialized = true;
         }
 
 		// undistort and rectify left and right image
-		boost::shared_ptr< Image > imgLeftr( new Image( imgLeft.size().width, imgLeft.size().height, imgLeft.channels(), vimgLeft->depth ) );
-		imgLeftr->origin = vimgLeft->origin;
-		cv::Mat imgLeftrm( *imgLeftr, false );
+		boost::shared_ptr< Image > imgLeftr( new Image( imgLeft.size().width, imgLeft.size().height, imgLeft.channels(), vimgLeft->depth() ) );
+		imgLeftr->set_origin(vimgLeft->origin());
+		cv::Mat imgLeftrm( imgLeftr->Mat(), false );
 
-		boost::shared_ptr< Image > imgRightr( new Image( imgRight.size().width, imgRight.size().height, imgRight.channels(), vimgRight->depth ) );
-		imgRightr->origin = vimgRight->origin;
-        cv::Mat imgRightrm( *imgRightr, false );
+		boost::shared_ptr< Image > imgRightr( new Image( imgRight.size().width, imgRight.size().height, imgRight.channels(), vimgRight->depth() ) );
+		imgRightr->set_origin(vimgRight->origin());
+        cv::Mat imgRightrm( imgRightr->Mat(), false );
 
 		try {
-		    remap(imgLeft, imgLeftrm, map11, map12, INTER_LINEAR);
+		    // remap(imgLeft, imgLeftrm, map11, map12, INTER_LINEAR);
 		} catch (cv::Exception const& e) {
 			std::cerr << e.what() << std::endl;
 			UBITRACK_THROW("Error undistorting left image");
 		}
 
 		try {
-	        remap(imgRight, imgRightrm, map21, map22, INTER_LINEAR);
+	        // remap(imgRight, imgRightrm, map21, map22, INTER_LINEAR);
 		} catch (cv::Exception const& e) {
 			std::cerr << e.what() << std::endl;
 			UBITRACK_THROW("Error undistorting right image");
@@ -389,28 +389,28 @@ public:
         }
 
 		// upload images to gpu
-        d_left.upload(imgLeftrm);
-        d_right.upload(imgRightrm);
+        // d_left.upload(imgLeftrm);
+        // d_right.upload(imgRightrm);
 
 
 		boost::shared_ptr< Image > disp_out( new Image( imgLeftrm.size().width, imgLeftrm.size().height, CV_8U ) );
-		disp_out->origin = imgLeftr->origin;
-		cv::Mat disp( *disp_out, false );
+		disp_out->set_origin(imgLeftr->origin());
+		cv::Mat disp( disp_out->Mat(), false );
 
-		if (d_disp.empty()) {
-	        d_disp.create(imgLeftrm.size(), CV_8U);
-		}
+		// if (d_disp.empty()) {
+	 //        d_disp.create(imgLeftrm.size(), CV_8U);
+		// }
 
-        switch (m_method)
-        {
-        case BM:
-            bm(d_left, d_right, d_disp);
-            break;
-        case BP: bp(d_left, d_right, d_disp); break;
-        case CSBP: csbp(d_left, d_right, d_disp); break;
-        }
+  //       switch (m_method)
+  //       {
+  //       case BM:
+  //           bm(d_left, d_right, d_disp);
+  //           break;
+  //       case BP: bp(d_left, d_right, d_disp); break;
+  //       case CSBP: csbp(d_left, d_right, d_disp); break;
+  //       }
 
-		d_disp.download(disp);
+		// d_disp.download(disp);
 
         LOG4CPP_DEBUG( logger, "Done computing Disparity Map." );
 

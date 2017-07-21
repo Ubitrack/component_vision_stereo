@@ -38,6 +38,7 @@
 
 //opencv includes
 #include "opencv/cv.h"
+#include "opencv2/opencv.hpp"
 
 
 // Boost (for data preperation)
@@ -275,22 +276,22 @@ public:
 		try
 		{
 
-            rms = cvStereoCalibrate(&object_points,
-                                           &image_points_left,
-                                           &image_points_right,
-                                           &point_counts,
-                                           &intrinsic_matrix_left,
-                                           &distortion_coeffs_left,
-                                           &intrinsic_matrix_right,
-                                           &distortion_coeffs_right,
-                                           cvSize( 640, 480 ),
-                                           &extrinsic_rotation,
-                                           &extrinsic_translation,
-                                           NULL,
-                                           NULL,
-                                           cv::TermCriteria(CV_TERMCRIT_ITER+CV_TERMCRIT_EPS, 100, 1e-5),
-                                           flags
-                                           );
+            // rms = cvStereoCalibrate(&object_points,
+            //                                &image_points_left,
+            //                                &image_points_right,
+            //                                &point_counts,
+            //                                &intrinsic_matrix_left,
+            //                                &distortion_coeffs_left,
+            //                                &intrinsic_matrix_right,
+            //                                &distortion_coeffs_right,
+            //                                cvSize( 640, 480 ),
+            //                                &extrinsic_rotation,
+            //                                &extrinsic_translation,
+            //                                NULL,
+            //                                NULL,
+            //                                cv::TermCriteria(CV_TERMCRIT_ITER+CV_TERMCRIT_EPS, 100, 1e-5),
+            //                                flags
+            //                                );
 		}
 		catch( const std::exception & e )
 		{
